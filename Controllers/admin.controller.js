@@ -42,12 +42,12 @@ function generateOtp() {
 
 const create = async (req, res) => {
     console.log(req.body)
-    const {header, title, Description } = req.body
+    const { header, title, Description } = req.body
     const date = new Date(); // Generate current date in the required format
 
     // Definning the params variable to uplaod the photo
     const s3 = new Aws.S3({
-        accessKeyId: process.env.ACCESS_KEY_ID,              // accessKeyId that is stored in .env file
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,              // accessKeyId that is stored in .env file
         secretAccessKey: process.env.AWS_ACCESS_KEY_SECRET       // secretAccessKey is also store in .env file
     })
     const params = {
@@ -65,12 +65,12 @@ const create = async (req, res) => {
             res.status(500).send({ "err": error })  // if we get any error while uploading error message will be returned.
         }
 
-    
+
 
         // saving the information in the database.   
         const news = new News({
-            title:title,
-            Description:Description,
+            title: title,
+            Description: Description,
             Date: date,
             ImageURL: data.Location,
             header
@@ -87,8 +87,8 @@ const create = async (req, res) => {
             })
             .catch(err => {
                 console.log(err)
-             
-                res.status(500).send({ message: err})
+
+                res.status(500).send({ message: err })
             })
     })
 
@@ -366,24 +366,24 @@ const ResetPassword = async (req, res) => {
 }
 
 const getNews = async (req, res) => {
-    const {NoOfNews,Page} = req.query
-    
+    const { NoOfNews, Page } = req.query
+
     try {
-      
-      let total = await News.aggregate([{$group:{_id:null,total:{$sum:1}}},{$project:{_id:0,total:1,totalPages:{$ceil:{$divide:["$total",Number(NoOfNews)]}}}}])
+
+        let total = await News.aggregate([{ $group: { _id: null, total: { $sum: 1 } } }, { $project: { _id: 0, total: 1, totalPages: { $ceil: { $divide: ["$total", Number(NoOfNews)] } } } }])
 
         // Send the retrieved news items as a response
-    
-        if(total[0]["totalPages"]<Number(Page)){
-            res.status(404).send({msg:`there is no ${Page} Page`})
-        }else{
-          let data = await  News.aggregate([{$skip:(Number(Page)-1)*Number(NoOfNews)},{$limit:Number(NoOfNews)}])
-          console.log(data.length)
-          res.send({data})
+
+        if (total[0]["totalPages"] < Number(Page)) {
+            res.status(404).send({ msg: `there is no ${Page} Page` })
+        } else {
+            let data = await News.aggregate([{ $skip: (Number(Page) - 1) * Number(NoOfNews) }, { $limit: Number(NoOfNews) }])
+            console.log(data.length)
+            res.send({ data })
         }
-            
-    
-        
+
+
+
     } catch (error) {
         // If an error occurs during the database operation, send an error response
         res.status(500).send({ message: 'Error fetching news items from the database' });
@@ -394,20 +394,30 @@ const getNews = async (req, res) => {
 /**************************************delete document by _id******************************************************** */
 const deleteDocumentById = async (req, res) => {
     const { _id } = req.query;
-  
+
     try {
-      // Find the document by its _id and delete it
-      const deletedDocument = await News.findByIdAndDelete(_id);
-      console.log(deletedDocument)
-      if (!deletedDocument) {
-        return res.status(404).json({ message: "Document not found." });
-      }
-  
-      return res.status(200).json({ message: "Document deleted successfully.", deletedDocument });
+        /************************************** here also should delete S3 Object, also have to implement that function************************************************/
+        // Find the document by its _id and delete it
+        const deletedDocument = await News.findByIdAndDelete(_id);
+        console.log(deletedDocument)
+        if (!deletedDocument) {
+            return res.status(404).json({ message: "Document not found." });
+        }
+
+        return res.status(200).json({ message: "Document deleted successfully.", deletedDocument });
     } catch (error) {
-      console.error("Error deleting document:", error);
-      return res.status(500).json({ message: "Internal server error." });
+        console.error("Error deleting document:", error);
+        return res.status(500).json({ message: "Internal server error." });
     }
-  };
+};
+
+
+
+// const { Rekognition } = require('aws-sdk'); 
+// const rekognition = new Rekognition(); 
+// const detectFaces = async (image) => { const params = { Image: { Bytes: image, }, }; 
+// const response = await rekognition.detectFaces(params).promise(); return response.FaceDetails; }; 
+// const compareFaces = async (face1, face2) => { const params = { SourceImage: { Bytes: face1, }, TargetImage: { Bytes: face2, }, }; 
+// const response = await rekognition.compareFaces(params).promise(); return response.Similarity; };
 
 module.exports = { Signup, OTPforSignUp, create, Login, updateVerify, ResetPassword, getNews, deleteDocumentById }
