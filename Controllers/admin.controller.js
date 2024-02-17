@@ -47,7 +47,7 @@ const create = async (req, res) => {
 
     // Definning the params variable to uplaod the photo
     const s3 = new Aws.S3({
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,              // accessKeyId that is stored in .env file
+        accessKeyId: process.env.ACCESS_KEY_ID,              // accessKeyId that is stored in .env file
         secretAccessKey: process.env.AWS_ACCESS_KEY_SECRET       // secretAccessKey is also store in .env file
     })
     const params = {
